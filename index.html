@@ -19,6 +19,8 @@ height: 375px;
         background-color: #666;
 }
 </style>
+<script src="opencv/platforms/js/opencv.js/opencv.js"></script>
+<script src="flann.js/flann.js"></script>
 </head>
 
 <body>
@@ -57,6 +59,13 @@ var draw_canvas = function() {
     canvas.setAttribute("height", h);
 
     ctx.drawImage(video, 0, 0, w, h);
+
+    var src = cv.imread('canvas');
+    var dst = new cv.Mat();
+    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+    cv.imshow('canvas', dst);
+    src.delete();
+    dst.delete();
 };
 setInterval(draw_canvas, 30);
 </script>
