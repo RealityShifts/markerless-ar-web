@@ -11,6 +11,7 @@
     height: 100vh;
     min-height: 100vh;
     background-color: #666;
+    display: none;
 }
 </style>
 <script src="opencv/platforms/js/opencv.js/opencv.js"></script>
@@ -26,7 +27,7 @@
 var video = document.querySelector("#videoElement");
  
 if (navigator.mediaDevices.getUserMedia) {       
-    navigator.mediaDevices.getUserMedia({video: true})
+    navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}})
         .then(function(stream) {
                 video.srcObject = stream;
         })
@@ -44,8 +45,10 @@ var draw_canvas = function() {
     var ctx = canvas.getContext('2d');
     var img = document.getElementById('img');
 
+    video.style.display = 'block';
     var w = video.offsetWidth;
     var h = video.offsetHeight;
+    video.style.display = 'none';
 
     canvas.setAttribute("width", w);
     canvas.setAttribute("height", h);
