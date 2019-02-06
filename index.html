@@ -7,16 +7,10 @@
 <title>Display Webcam Stream</title>
 
 <style>
-#container {
-    margin: 0px auto;
-width: 500px;
-height: 375px;
-border: 10px #333 solid;
-}
 #videoElement {
-width: 500px;
-height: 375px;
-        background-color: #666;
+    height: 100vh;
+    min-height: 100vh;
+    background-color: #666;
 }
 </style>
 <script src="opencv/platforms/js/opencv.js/opencv.js"></script>
@@ -24,12 +18,10 @@ height: 375px;
 </head>
 
 <body>
-<div id="container">
 <video autoplay="true" id="videoElement">
 
 </video>
 <canvas id="canvas"></canvas>
-</div>
 <script>
 var video = document.querySelector("#videoElement");
  
