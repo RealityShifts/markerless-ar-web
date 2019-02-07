@@ -16,6 +16,8 @@
 </style>
 <script src="opencv/platforms/js/opencv.js/opencv.js"></script>
 <script src="flann.js/flann.js"></script>
+<script src="roi.js"></script>
+<script src="matcher.js"></script>
 </head>
 
 <body>
@@ -25,11 +27,31 @@
 <canvas id="canvas"></canvas>
 <script>
 var video = document.querySelector("#videoElement");
+var canvas = document.getElementById('canvas');
+var ctx = canvas.getContext('2d');
+
+var alg = 'orb';
+
+var k1 = 0.0814318880;
+var k2 = -0.0729859173;
+var p1 = 0.0077049430;
+var p2 = -0.0046416679;
+var fx = 1019.955688;
+var fy = 1019.131287;
+var x0 = 643.416321;
+var y0 = 381.590668;
+var s = 0.957716;
+var dis_coeff = [k1, k2, p1, p2];
+var camera_matrix = [[fx, 0.0, x0], [0.0, fy, y0], [0.0, 0.0, 1.0]];
+
+var roi = null;
+var matcher = null;
  
 if (navigator.mediaDevices.getUserMedia) {       
     navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}})
         .then(function(stream) {
                 video.srcObject = stream;
+                init();
         })
     .catch(function(err0r) {
             console.log("Something went wrong!");
@@ -41,10 +63,6 @@ var draw_canvas = function() {
         return;
     }
 
-    var canvas = document.getElementById('canvas');
-    var ctx = canvas.getContext('2d');
-    var img = document.getElementById('img');
-
     video.style.display = 'block';
     var w = video.offsetWidth;
     var h = video.offsetHeight;
@@ -54,15 +72,33 @@ var draw_canvas = function() {
     canvas.setAttribute("height", h);
 
     ctx.drawImage(video, 0, 0, w, h);
+};
+
+var init = function() {
+    draw_canvas();
 
     var src = cv.imread('canvas');
+    var crop = src.roi(new cv.Rect(w * 0.2, h * 0.2, w * 0.6, h * 0.6));
+    roi = new ROI(crop, alg);
+    matcher = new Matcher(roi, alg, dis_coeff, camera_matrix);
+
     var dst = new cv.Mat();
-    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY, 0);
+    cv.cvtColor(crop, dst, cv.COLOR_RGBA2GRAY, 0);
     cv.imshow('canvas', dst);
     src.delete();
+    crop.delete();
     dst.delete();
 };
-setInterval(draw_canvas, 30);
+
+var update = function() {
+    draw_canvas();
+
+    var src = cv.imread('canvas');
+    matcher.set_frame(src);
+    matcher.getCorrespondence()
+};
+
+setInterval(update, 30);
 </script>
 </body>
 </html>

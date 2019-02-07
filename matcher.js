@@ -7,6 +7,8 @@ var Matcher = function(roi, alg, dist_coeffs, camera_matrix) {
     this.frame = new cv.Mat();
 };
 
+MIN_MATCH_COUNT = 50
+
 Matcher.prototype.set_frame = function(frame) {
     cv.cvtColor(frame, this.frame, cv.COLOR_BGR2GRAY);
 };
@@ -17,9 +19,11 @@ Matcher.prototype.get_correspondence = function() {
 
     if(this.alg === 'orb') {
         var orb = new cv.ORB();
-        var kp2 = new cv.Mat();
+        var kp2 = new cv.KeyPointVector();
         var des2 = new cv.Mat();
-        orb.detectAndCompute(this.image, null, kp2, des2);
+        var mask = new cv.Mat();
+        orb.detectAndCompute(this.image, mask, kp2, des2);
+        mask.delete();
     }
 
     var dataset = [...Array(des1.rows)].map(function(i) { return des1.row(i).data; });
@@ -28,19 +32,22 @@ Matcher.prototype.get_correspondence = function() {
     });
     queries = [...Array(des1.rows)].map(function(i) { return des2.row(i).data; });
     matches = index.multiQuery(queries, 2);
+
     good = [];
-    for(m_n in matches) {
+    for(var i = 0; i < matches.length; ++i) {
+        var m_n = matches[i];
         var keys = Object.keys(m_n);
         if(keys.length != 2) {
             continue;
         }
         if(Math.abs(m_n[keys[0]] - m_n[keys[1]]) < 0.7) {
-            good.push(keys[0])
+            good.push({
+                query_id: i,
+                train_id: m_n[keys[0]] < m_n[keys[1]] ? keys[0] : keys[1]
+            });
         }
     }
-    /*
-    flann = new cv.FlannBasedMatcher();
-    var matches = new cv.DMatchVectorVector();
-    flann.knnMatch(des1, des2, matches);
-    */
+
+    if(good.length >= MIN_MATCH_COUNT) {
+    }
 };

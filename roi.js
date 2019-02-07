@@ -4,9 +4,11 @@ var ROI = function(image, alg) {
 
     if(alg === 'orb') {
         orb = cv.ORB();
-        this.keypoints = new cv.Mat();
+        this.keypoints = new cv.KeyPointVector();
         this.descriptors = new cv.Mat();
-        orb.detectAndCompute(this.image, null, this.keypoints, this.descriptors);
+        mask = new cv.Mat();
+        orb.detectAndCompute(this.image, mask, this.keypoints, this.descriptors);
+        mask.delete();
     }
 
    var size = this.image.size();
