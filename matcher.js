@@ -41,7 +41,7 @@ Matcher.prototype.get_correspondence = function() {
         if(keys.length != 2) {
             continue;
         }
-        if(Math.abs(m_n[keys[0]] - m_n[keys[1]]) < 7000) {
+        if(Math.abs(m_n[keys[0]] - m_n[keys[1]]) > 1000) {
             good.push({
                 query_id: i,
                 train_id: m_n[keys[0]] < m_n[keys[1]] ? keys[0] : keys[1]
