@@ -1,3 +1,6 @@
 [submodule "flann.js"]
 	path = flann.js
 	url = https://github.com/agrbin/flann.js
+[submodule "opencv"]
+	path = opencv
+	url = https://github.com/TRSasasusu/opencv
