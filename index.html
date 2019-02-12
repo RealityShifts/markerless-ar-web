@@ -42,7 +42,7 @@ var x0 = 643.416321;
 var y0 = 381.590668;
 var s = 0.957716;
 var dis_coeff = [k1, k2, p1, p2];
-var camera_matrix = [[fx, 0.0, x0], [0.0, fy, y0], [0.0, 0.0, 1.0]];
+var camera_matrix = [fx,0.0,x0, 0.0,fy,y0, 0.0,0.0,1.0];
 
 var roi = null;
 var matcher = null;
@@ -51,16 +51,16 @@ if (navigator.mediaDevices.getUserMedia) {
     navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}})
         .then(function(stream) {
                 video.srcObject = stream;
-                init();
-        })
-    .catch(function(err0r) {
+                setTimeout(init, 10000);
+        });
+    /*.catch(function(err0r) {
             console.log("Something went wrong!");
-    });
+    });*/
 }
 
 var draw_canvas = function() {
     if(video.srcObject == null) {
-        return;
+        return false;
     }
 
     video.style.display = 'block';
@@ -72,30 +72,79 @@ var draw_canvas = function() {
     canvas.setAttribute("height", h);
 
     ctx.drawImage(video, 0, 0, w, h);
+
+    return true;
 };
 
+var called_init = false;
 var init = function() {
-    draw_canvas();
+    if(!draw_canvas()) {
+        return;
+    }
+
+    camera_matrix = cv.matFromArray(3, 3, cv.CV_32F, camera_matrix);
+    dis_coeff = cv.matFromArray(1, 4, cv.CV_32F, dis_coeff);
 
     var src = cv.imread('canvas');
-    var crop = src.roi(new cv.Rect(w * 0.2, h * 0.2, w * 0.6, h * 0.6));
+    video.style.display = 'block';
+    var w = video.offsetWidth;
+    var h = video.offsetHeight;
+    video.style.display = 'none';
+    var crop = new cv.Mat();
+    crop = src.roi(new cv.Rect(w * 0.2, h * 0.2, w * 0.6, h * 0.6));
     roi = new ROI(crop, alg);
     matcher = new Matcher(roi, alg, dis_coeff, camera_matrix);
 
+    called_init = true;
+
+    /*
     var dst = new cv.Mat();
     cv.cvtColor(crop, dst, cv.COLOR_RGBA2GRAY, 0);
     cv.imshow('canvas', dst);
+    dst.delete();
+    */
     src.delete();
     crop.delete();
-    dst.delete();
 };
 
 var update = function() {
-    draw_canvas();
+    if(!draw_canvas()) {
+        return;
+    }
+    if(!called_init) {
+        //init();
+        return;
+    }
 
     var src = cv.imread('canvas');
     matcher.set_frame(src);
-    matcher.getCorrespondence()
+    if(!matcher.get_correspondence()) {
+        src.delete();
+        return;
+    }
+
+    var rvec_corner = new cv.Mat();
+    var tvec_corner = new cv.Mat();
+    matcher.compute_pose(roi.points3d, matcher.corners, rvec_corner, tvec_corner);
+
+    var axis = cv.matFromArray(8, 3, cv.CV_32F, [0,0,0, 0,1,0, 1,1,0, 1,0,0, 0,0,-1, 0,1,-1, 1,1,-1, 1,0,-1]);
+    //var image_points = new cv.PointVector();
+    var image_points = new cv.Mat();
+    cv.projectPoints(axis, rvec_corner, tvec_corner, camera_matrix, dis_coeff, image_points);
+
+    var corners = matcher.corners.data32F.map(function(d) { return Math.floor(d); });
+    var color = new cv.Scalar(0, 0, 255);
+    cv.line(src, new cv.Point(corners[0], corners[1]), new cv.Point(corners[2], corners[3]), color);
+    cv.line(src, new cv.Point(corners[2], corners[3]), new cv.Point(corners[4], corners[5]), color);
+    cv.line(src, new cv.Point(corners[4], corners[5]), new cv.Point(corners[6], corners[7]), color);
+    cv.line(src, new cv.Point(corners[6], corners[7]), new cv.Point(corners[0], corners[1]), color);
+    //cv.polylines(src, matcher.corners, true, 255, 3, cv.LINE_AA);
+    cv.imshow('canvas', src);
+    src.delete();
+    rvec_corner.delete();
+    tvec_corner.delete();
+    axis.delete();
+    image_points.delete();
 };
 
 setInterval(update, 30);
